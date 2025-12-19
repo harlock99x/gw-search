@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ガンダムウォー カード検索エンジン</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #f0f2f5; }
+        .search-container { position: sticky; top: 0; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 100; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        .stats { color: #666; font-size: 0.9em; margin-top: 5px; }
+        #result-list { margin-top: 20px; }
+        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 6px; border-left: 5px solid #2c3e50; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-name { font-weight: bold; color: #1a73e8; font-size: 1.1em; }
+        .card-info { font-size: 0.85em; color: #555; margin: 5px 0; }
+        .card-effect { background: #f9f9f9; padding: 8px; border-radius: 4px; font-size: 0.9em; white-space: pre-wrap; margin-top: 8px; border-top: 1px dashed #eee; }
+        .tag { display: inline-block; background: #e8f0fe; color: #1967d2; padding: 2px 8px; border-radius: 10px; margin-right: 5px; }
+        .highlight { background: yellow; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="search-container">
+    <h2>GWカード検索 (1万行対応版)</h2>
+    <input type="text" id="searchInput" placeholder="カード名や効果テキストを入力... (例: ガンダム 破壊)">
+    <div class="stats" id="stats">データを読み込み中...</div>
+</div>
+
+<div id="result-list"></div>
+
+<script>
+    let cardData = [];
+
+    // JSONデータの読み込み
+    fetch('data.json')
+        .then(response => response.json())
+        .then(data => {
+            cardData = data;
+            document.getElementById('stats').innerText = `全 ${cardData.length} 件のデータをロード完了`;
+            renderResults(cardData.slice(0, 50)); // 最初は50件表示
+        })
+        .catch(err => {
+            document.getElementById('stats').innerText = "データの読み込みに失敗しました。VBAでdata.jsonを作成してください。";
+            console.error(err);
+        });
+
+    const searchInput = document.getElementById('searchInput');
+    const resultList = document.getElementById('result-list');
+
+    searchInput.addEventListener('input', () => {
+        const query = searchInput.value.trim().toLowerCase();
+        if (!query) {
+            renderResults(cardData.slice(0, 50));
+            updateStats(cardData.length, 50);
+            return;
+        }
+
+        // スペース区切りの複数ワード検索に対応
+        const keywords = query.split(/\s+/);
+
+        const filtered = cardData.filter(card => {
+            const name = (card["カード名称"] || "").toLowerCase();
+            const effect = (card["特殊効果"] || "").toLowerCase();
+            const combined = name + " " + effect;
+            
+            return keywords.every(kw => combined.includes(kw));
+        });
+
+        renderResults(filtered.slice(0, 100)); // 検索時は100件まで表示
+        updateStats(filtered.length,
