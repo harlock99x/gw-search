@@ -43,7 +43,7 @@ const createCard = (i) => {
   h += `<div class='main-text'><b>【特殊効果】</b><br>${i['特殊効果']||'（なし）'}<br><br><b>【テキスト】</b><br>${i['テキスト']||'―'}</div>`;
   
   if(i['戦闘力'] && i['戦闘力'].trim() !== ''){ h += `<div class='stats-box'>戦闘力 ${i['戦闘力']}</div>`; }
-  if(i['変形形態－名称']){ h += `<div style='background:#fffde7;border:1px dashed #fbc02d;padding:10px;border-radius:4px;margin-bottom:10px;'><b>変形: ${i['変形形態－名称']}</b><br>${i['第2テキスト']}<br><b>戦闘力: ${i['戦闘力2']}</b></div>`; }
+  if(i['変形形態－名称']){ h += `<div style='background:#fffde7;border:1px dashed #fbc02d;padding:10px;border-radius:4px;margin-bottom:10px;'><b>変形: ${i['変形形態－名称']}</b><br>【変形時特殊効果】<br>${i['特殊効果（元データ）']}<br>【変形時テキスト】<br>${i['テキスト2']}<br><b>戦闘力: ${i['戦闘力2']}</b></div>`; }
 if(i['エキスパンション']){ h += `<span class='tag' style='background:#f0f4f8; color:#546e7a; border:10px solid #cfd8dc;'>${i['エキスパンション']}</span>`;
   }
 if(i['レアリティ']){ h += `<span class='tag' style='background:#f0f4f8; color:#546e7a; border:10px solid #cfd8dc;'>${i['レアリティ']}</span>`;
