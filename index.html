@@ -43,7 +43,7 @@ const createCard = (i) => {
   h += `<div class='main-text'><b>【特殊効果】</b><br>${i['特殊効果']||'（なし）'}<br><br><b>【テキスト】</b><br>${i['テキスト']||'―'}</div>`;
   
   if(i['戦闘力'] && i['戦闘力'].trim() !== ''){ h += `<div class='stats-box'>戦闘力 ${i['戦闘力']}</div>`; }
-  if(i['変形形態－名称']){ h += `<div style='background:#fffde7;border:1px dashed #fbc02d;padding:10px;border-radius:4px;margin-bottom:10px;'><b>変形: ${i['変形形態－名称']}</b><br>【変形時特殊効果】<br>${i['特殊効果（元データ）']}<br>【変形時テキスト】<br>${i['テキスト2']}<br><b>戦闘力: ${i['戦闘力2']}</b></div>`; }
+  if(i['変形形態－名称']){ h += `<div style='background:#fffde7;border:1px dashed #fbc02d;padding:10px;border-radius:4px;margin-bottom:10px;'><b>変形: ${i['変形形態－名称']}</b><br>【特殊効果】<br>${i['特殊効果（元データ）']}<br>【テキスト】<br>${i['テキスト2']}<br><b>戦闘力: ${i['戦闘力2']}</b></div>`; }
 if(i['エキスパンション']){ h += `<span class='tag' style='background:#f0f4f8; color:#546e7a; border:10px solid #cfd8dc;'>${i['エキスパンション']}</span>`;
   }
 if(i['レアリティ']){ h += `<span class='tag' style='background:#f0f4f8; color:#546e7a; border:10px solid #cfd8dc;'>${i['レアリティ']}</span>`;
@@ -92,24 +92,46 @@ const search = () => {
   document.querySelectorAll('.f').forEach(f => {
     const v = f.value.toLowerCase().trim();
     const col = f.dataset.col;
+
     if (v) {
+      const keywords = v.split(/[\s　]+/).filter(k => k.length > 0);
+
       filteredData = filteredData.filter(i => {
-        const itemValue = (i[col] || '').toString().toLowerCase().trim();
-        if (col === 'カード種類' && v === 'unit') return itemValue === 'unit';
-        return itemValue.includes(v);
+        // --- 検索対象の文字列を作る ---
+        let targetText = '';
+
+        if (col === 'テキスト') {
+          // 「テキスト」の検索欄なら、「第2テキスト」も合体させる
+          targetText = (i['テキスト'] || '') + ' ' + (i['テキスト2'] || '');
+        } else if (col === '特殊効果') {
+          // 「特殊効果」の検索欄なら、「特殊効果(元データ)」も合体させる
+          // ※データ側の正確な項目名が「特殊効果2」や「元データ」ならそこを書き換えてください
+          targetText = (i['特殊効果'] || '') + ' ' + (i['特殊効果（元データ）'] || '');
+        } else {
+          // それ以外は通常通り
+          targetText = (i[col] || '').toString();
+        }
+        
+        targetText = targetText.toLowerCase();
+
+        // UNITだけ完全一致の特別ルール
+        if (col === 'カード種類' && v === 'unit') {
+          return targetText.trim() === 'unit';
+        }
+
+        // 全てのキーワードが含まれているかチェック
+        return keywords.every(kw => targetText.includes(kw));
       });
     }
   });
 
-  // エキスパンションの複数選択判定
+  // （エキスパンションとレアリティの判定は以下同様）
   if (checkedExps.length > 0) {
     filteredData = filteredData.filter(i => {
       const itemExp = (i['エキスパンション'] || '').toString().toLowerCase().trim();
       return checkedExps.includes(itemExp);
     });
   }
-
-  // レアリティの複数選択判定（前回のロジック）
   if (checkedRarities.length > 0) {
     filteredData = filteredData.filter(i => {
       const itemRarity = (i['レアリティ'] || '').toString().toLowerCase().trim();
@@ -122,7 +144,6 @@ const search = () => {
   c.innerText = filteredData.length + ' 件ヒット';
   loadMore();
 };
-
 // 最初にフィルタを生成
 initExpFilters();
 
