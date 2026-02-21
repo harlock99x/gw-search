@@ -1,7 +1,15 @@
 ﻿<!DOCTYPE html><html lang='ja'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'><title>ねこあそガンダムウォーデータベース</title><style>body{font-family:sans-serif;background:#f0f2f5;margin:0;padding:80px 0 70px 0;font-size:14px;}.header-bar{position:fixed;top:0;left:0;right:0;height:60px;background:#1a73e8;color:white;display:flex;justify-content:space-between;align-items:center;padding:0 15px;z-index:1001;box-shadow:0 2px 5px rgba(0,0,0,0.2);}.panel{position:fixed;top:60px;left:0;right:0;background:white;padding:15px;z-index:1000;box-shadow:0 4px 10px rgba(0,0,0,0.2);display:none;max-height:80vh;overflow-y:auto;border-radius:0 0 15px 15px;}.panel.open{display:block;}.grid{display:grid;grid-template-columns: 1fr; gap:12px;}.field-label{font-weight:bold; margin-bottom:4px; display:block; font-size:12px; color:#666;}select, input[type='text']{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:16px;box-sizing:border-box;}.card-container{padding:0 10px;}.card{background:white;margin-bottom:15px;padding:15px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);border-left:10px solid #2c3e50;}.card-name{font-weight:bold;color:#1a73e8;font-size:1.25em;border-bottom:1px solid #eee;padding-bottom:5px;margin-bottom:8px;}.tag{display:inline-block;background:#e1f5fe;padding:2px 8px;border-radius:4px;font-size:0.8em;margin-right:5px;font-weight:bold;}.main-text{background:#fafafa;padding:12px;margin:10px 0;border-radius:6px;border:1px solid #eee;white-space:pre-wrap;line-height:1.6;font-size:0.95em;}.stats-box{background:#37474f;color:white;padding:6px 15px;border-radius:4px;font-weight:bold;display:inline-block;font-family:monospace;font-size:1.1em;letter-spacing:1px;margin-bottom:10px;}.btn{background:white; color:#1a73e8; border:none; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer;}#loading{text-align:center; padding:20px; color:#666; font-weight:bold;}</style></head><body><div class='header-bar'><div id='count'>0件</div><button class='btn' onclick='togglePanel()'>条件を変更</button></div><div class='panel' id='p'><div class='grid'><div><span class='field-label'>カード名称</span><input type='text' class='f' data-col='カード名称'></div><div><span class='field-label'>カード種類</span><select class='f' data-col='カード種類'><option value=''>すべて</option><option value='UNIT'>UNIT</option><option value='CHARACTER'>CHARACTER</option><option value='COMMAND'>COMMAND</option><option value='OPERATION'>OPERATION</option><option value='GENERATION'>GENERATION</option></select></div><div><span class='field-label'>色・コスト</span><input type='text' class='f' data-col='コスト [指定-合計-資源]'></div>
 <div><span class='field-label'>特徴</span><input type='text' class='f' data-col='特徴'></div>
-<div><span class='field-label'>特殊効果</span><input type='text' class='f' data-col='特殊効果'></div>
-<div><span class='field-label'>テキスト</span><input type='text' class='f' data-col='テキスト'></div></div><br>
+<div><span class='field-label'>特殊効果</span>
+<label style='display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: bold;'>
+    <input type='checkbox' id='filter-no-effect' class='f-logic-check'> 特殊効果なし
+  </label>
+<input type='text' class='f' data-col='特殊効果'></div>
+<div><span class='field-label'>テキスト</span>
+  <label style='display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: bold;'>
+    <input type='checkbox' id='filter-no-text' class='f-logic-check'> テキストなし
+  </label>
+<input type='text' class='f' data-col='テキスト'></div></div><br>
 <div class='filter-group' style='margin-bottom: 15px;'>
   <details style='border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;'>
     <summary style='padding: 10px; cursor: pointer; font-weight: bold; background: #eee; outline: none;'>
@@ -84,7 +92,40 @@ const initExpFilters = () => {
 
 // 3. 検索関数（エキスパンション判定を追加）
 const search = () => {
-  filteredData = d;
+filteredData = [...d];
+
+  // 1. 既存の入力項目（名称、種類など）のフィルタ
+  document.querySelectorAll('.f').forEach(input => {
+    const val = input.value.toLowerCase().trim();
+    const col = input.dataset.col;
+    if (val) {
+      filteredData = filteredData.filter(i => (i[col] || '').toString().toLowerCase().includes(val));
+    }
+  });
+
+  // --- 追加：特殊効果なし判定 ---
+  const noEffect = document.getElementById('filter-no-effect').checked;
+  if (noEffect) {
+    filteredData = filteredData.filter(i => {
+      // 「特殊効果」と「特殊効果（元データ）」の両方が空白のものを抽出
+      const eff1 = (i['特殊効果'] || '').toString().trim();
+      const eff2 = (i['特殊効果（元データ）'] || '').toString().trim();
+      return eff1 === '' && eff2 === '';
+    });
+  }
+
+  // --- 追加：テキストなし判定 ---
+  const noText = document.getElementById('filter-no-text').checked;
+  if (noText) {
+    filteredData = filteredData.filter(i => {
+      // 「テキスト」と「テキスト2」の両方が空白のものを抽出
+      const txt1 = (i['テキスト'] || '').toString().trim();
+      const txt2 = (i['テキスト2'] || '').toString().trim();
+      return txt1 === '' && txt2 === '';
+    });
+  }
+
+
   
   const checkedRarities = Array.from(document.querySelectorAll('.f-check:checked')).map(el => el.value.toLowerCase());
   const checkedExps = Array.from(document.querySelectorAll('.f-check-exp:checked')).map(el => el.value.toLowerCase());
@@ -149,7 +190,11 @@ initExpFilters();
 
 // チェックボックスがクリックされた時に自動検索
 document.addEventListener('change', (e) => {
-  if (e.target.classList.contains('f-check') || e.target.classList.contains('f-check-exp')) {
+  if (
+    e.target.classList.contains('f-check') || 
+    e.target.classList.contains('f-check-exp') || 
+    e.target.classList.contains('f-logic-check') // ここを追加
+  ) {
     search();
   }
 });
